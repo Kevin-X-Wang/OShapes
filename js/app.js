@@ -2,6 +2,8 @@ var width = window.innerWidth;
 var height = window.innerHeight;
 
 var currGroup = null;
+var currRat = null;
+var currTemp = null;
 
 var stage = new Konva.Stage({
   stroke: 'grey',
@@ -33,34 +35,58 @@ document.getElementById('save').addEventListener(
   false
 );
 
-function imageShow(imageList, group){
-  $("#horizontal-menu").html("");
-  var objectImage = group.get('Image')[0];
-  var img = new Image();
-  img.onload = function() {
-    objectImage.image(img);
-    layer.draw();
-  };
-  img.src = imageList[0];
-  var i = 0;
-  while(i < 10 || i == imageList.length){
-    var obj = document.createElement("img");
-    obj.src = imageList[i];
-    $("#horizontal-menu").append(obj);
-    i++;
-  }
-  var menu = document.querySelector("#horizontal-menu");
-  var btns = menu.getElementsByTagName('img');
-  for (var i = 0; i < btns.length; i++) {
-    btns[i].addEventListener("click", function() {
-      var objectImage = currGroup.get('Image')[0];
-      var img = new Image();
-      img.onload = function() {
-        objectImage.image(img);
-        layer.draw();
-      };
-      img.src = this.src;
+function imageShow(imageList, group, ratio, template){
+  if(imageList.length == 0){
+    $.ajax({
+      url: "/ImageMatch",
+      type: "get", //send it through get method
+      data: {
+        Width: 100,
+        Height: 100,
+        Image: template
+      },
+      success: function(response) {
+        imageShow(response[0], group, response[1], template);
+      },
+      error: function(xhr) {
+        //Do Something to handle error
+      }
     });
+  }
+  else if(currGroup != group ||
+          (currGroup == group && currRat != ratio)){
+    currGroup = group;
+    currRat = ratio;
+    currTemp = template;
+    currImageList = imageList;
+    $("#horizontal-menu").html("");
+    var objectImage = group.get('Image')[0];
+    var img = new Image();
+    img.onload = function() {
+      objectImage.image(img);
+      layer.draw();
+    };
+    img.src = imageList[0];
+    var i = 0;
+    while(i < 200 || i == imageList.length){
+      var obj = document.createElement("img");
+      obj.src = imageList[i];
+      $("#horizontal-menu").append(obj);
+      i++;
+    }
+    var menu = document.querySelector("#horizontal-menu");
+    var btns = menu.getElementsByTagName('img');
+    for (var i = 0; i < btns.length; i++) {
+      btns[i].addEventListener("click", function() {
+        var objectImage = currGroup.get('Image')[0];
+        var img = new Image();
+        img.onload = function() {
+          objectImage.image(img);
+          layer.draw();
+        };
+        img.src = this.src;
+      });
+    }
   }
 }
 
@@ -76,8 +102,7 @@ function passParams(width, height, template, group){
         Image: template
       },
       success: function(response) {
-        currGroup = group;
-        imageShow(response, group);
+        imageShow(response[0], group, response[1], template);
       },
       error: function(xhr) {
         //Do Something to handle error
